@@ -18,6 +18,7 @@ public class Lift implements Runnable {
 	@Override
 	public void run() {
 		while (true) {
+			monitor.waitPassengers();
 			monitor.waitingExit();
 			monitor.waitingEntry();
 			lv.moveLift(monitor.here, monitor.next);

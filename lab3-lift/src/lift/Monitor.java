@@ -51,7 +51,6 @@ public class Monitor {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			
 		}
 		moving = true;
 		notifyAll();
@@ -64,10 +63,8 @@ public class Monitor {
 			try {
 				wait();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 		}
 		moving = true;
 		notifyAll();
@@ -88,6 +85,22 @@ public class Monitor {
 		notifyAll();
 	}
 	
+	public synchronized void waitPassengers() {
+		int arrivedPassengers = 0;
+		int liftPassengers = 0;
+		for(int i = 0; i < waitEntry.length; i++) {
+			arrivedPassengers += waitEntry[i];
+			liftPassengers += waitExit[i];
+		}
+		if(arrivedPassengers == 0 && liftPassengers == 0) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		notifyAll();
+	}
 	
 	protected synchronized void calculateNext(){
 		if(next > here){
