@@ -2,69 +2,117 @@ package lift;
 
 public class Monitor {
 	public int here = 0;
-	public int next = 0;
-	private int[] waitEntry = new int[7];
-	private int[] waitExit = new int[7];
+	public int next = 1;
+	public int[] waitEntry = new int[7];
+	public int[] waitExit = new int[7];
 	private int load = 0;
 	private LiftView lv;
+	boolean moving = true;
+	boolean direction = true;
 
 	public Monitor(LiftView lv) {
 		this.lv = lv;
 	}
 
-	public boolean canEnter(int currentFloor) {
-		return currentFloor == here && load < 4 && here == next;
+	public synchronized void addToQueue(int start, Passenger passenger) {
+		waitEntry[start]++;
+		lv.showDebugInfo(waitEntry, waitExit);
+		notifyAll();
 	}
 
-	public synchronized void moveLift(int dest) {
-		next = dest;
+	public synchronized void moveLift() {
 		System.out.println(here + " " + next);
-		if(here != next) {
-			lv.moveLift(here, next);
+		lv.moveLift(here, next);
+	}
+	
+	public synchronized void enterLift(int start, int end, Passenger passenger) {
+
+		while (start != here || load >=4 || moving) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		here = next;
-	}
-
-	public synchronized void enterLift(int entryFloor, int exitFloor) {
 		load++;
-		waitEntry[entryFloor]--;
-		waitExit[exitFloor]++;
+		waitEntry[here]--;
+		waitExit[end]++;
+		passenger.enterLift();
+		lv.showDebugInfo(waitEntry, waitExit);
+		notifyAll();
 	}
 
-	public void exitLift() {
+	public synchronized void waitingExit() {
+		moving = false;
+		notifyAll();
+		while(waitExit[here]!=0) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		moving = true;
+		notifyAll();
+	}
+	
+	public synchronized void waitingEntry() {
+		moving = false;
+		notifyAll();
+		while(waitEntry[here]!= 0 && load < 4) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		moving = true;
+		notifyAll();
+		
+	}
+	public synchronized void exitLift(int end, Passenger passenger) {
+		while(here != end || moving) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		load--;
 		waitExit[here]--;
-	}
-
-	public synchronized void setDestination(int going) {
-		next = going;
-		notifyAll();
-	}
-
-	public void currentFloor(int current) {
-		here = current;
-
-	}
-	public synchronized void transport(int start, int destination, Passenger passenger) throws InterruptedException {
-		waitEntry[start]++;
-		if(start != here) {
-			setDestination(start);
-			moveLift(start);
-		}
-		while(!canEnter(start)) {
-			wait();
-		}
-		passenger.enterLift();
-		notifyAll();
-		moveLift(destination);
-		waitExit[destination]++;
-		waitEntry[start]--;
-		while(destination != here || here != next) {
-			wait();
-		}
 		passenger.exitLift();
-		waitExit[destination]--;
+		lv.showDebugInfo(waitEntry, waitExit);
 		notifyAll();
 	}
+	
+	
+	protected synchronized void calculateNext(){
+		if(next > here){
+			here = next;
+			if(next == 6){
+				next--;
+				direction = false;
+			}else{
+				next++;
+				direction = true;
+			}
+		}else{
+			here = next;
+			if(next == 0){
+				next++;
+				direction = true;
+			}else{
+				next--;
+				direction = false;
+			}
+		}
+		notifyAll();
+	}
+	
 
+	
+	
 }

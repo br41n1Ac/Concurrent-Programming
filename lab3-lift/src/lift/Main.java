@@ -8,7 +8,7 @@ public class Main {
 		Monitor monitor = new Monitor(lv);
 		
 		Lift lift = new Lift(monitor, lv);
-		int people = 2;
+		int people = 20;
 		Person persons[] = new Person[people];
 		Person person = new Person(monitor, lv);
 //		new Thread(person).start();

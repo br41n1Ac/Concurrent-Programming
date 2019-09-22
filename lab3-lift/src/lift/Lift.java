@@ -7,6 +7,7 @@ public class Lift implements Runnable {
 	private Monitor monitor;
 	private LiftView lv;
 	private int floor = 0;
+	boolean first = true;
 
 	public Lift(Monitor monitor, LiftView lv) {
 		this.monitor = monitor;
@@ -17,13 +18,10 @@ public class Lift implements Runnable {
 	@Override
 	public void run() {
 		while (true) {
-			monitor.moveLift(monitor.next);
-			floor = monitor.next;
-			try {
-				Thread.sleep(1550);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			monitor.waitingExit();
+			monitor.waitingEntry();
+			lv.moveLift(monitor.here, monitor.next);
+			monitor.calculateNext();
 		}
 
 	}

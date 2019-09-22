@@ -72,7 +72,7 @@ public class ClockMain {
 						}).start();
 					}
 					try {
-						Thread.sleep(998);
+						Thread.sleep(995);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

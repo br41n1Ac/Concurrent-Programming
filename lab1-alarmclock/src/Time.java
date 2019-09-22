@@ -1,10 +1,12 @@
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.Semaphore;
 
 public class Time {
 	private int time;
 	private int alarm;
+	private Semaphore mutex = new Semaphore(1);
 
 	public Time() {
 		time = currentTime();
@@ -16,15 +18,34 @@ public class Time {
 		int t = Integer.parseInt(time);
 		return t;
 	}
+	
 	public void setAlarm(int hhmmss) {
-		alarm = hhmmss;
+		try {
+			mutex.acquire();
+			alarm = hhmmss;
+			mutex.release();
+		} catch (InterruptedException e) {
+		}
+	
+		
 	}
 
 	public void setTime(int hhmmss) {
 		time = hhmmss;
 	}
 	public boolean triggerAlarm() {
-		return alarm == time;
+		boolean trig = false;
+		try {
+			mutex.acquire();
+			if(alarm == time) {
+				trig = true;
+			}else {
+				trig = false;
+			}
+			mutex.release();
+		} catch (InterruptedException e) {
+		}
+		return trig;
 	}
 
 	public int getTime() {

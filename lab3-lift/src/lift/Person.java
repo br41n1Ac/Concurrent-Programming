@@ -21,17 +21,14 @@ public class Person implements Runnable{
 	@Override
 	public synchronized void run() {
 			try {
-				Thread.sleep(new Random().nextInt(10000));
+				Thread.sleep(new Random().nextInt(45000));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			passenger.begin();
-			try {
-				monitor.transport(startFloor, destFloor, passenger);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			monitor.addToQueue(startFloor, passenger);
+			monitor.enterLift(startFloor, destFloor, passenger);
+			monitor.exitLift(destFloor, passenger);
 			passenger.end();
 		
 		
