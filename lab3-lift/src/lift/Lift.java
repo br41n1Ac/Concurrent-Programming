@@ -22,7 +22,7 @@ public class Lift implements Runnable {
 			monitor.waitingExit();
 			monitor.waitingEntry();
 			lv.moveLift(monitor.here, monitor.next);
-			monitor.calculateNext();
+			monitor.updateNextFloor();
 		}
 
 	}

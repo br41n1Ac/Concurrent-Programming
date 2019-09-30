@@ -26,7 +26,7 @@ public class Monitor {
 	}
 	
 	public synchronized void enterLift(int start, int end, Passenger passenger) {
-
+		
 		while (start != here || load >=4 || moving) {
 			try {
 				wait();
@@ -102,15 +102,36 @@ public class Monitor {
 		notifyAll();
 	}
 	
-	protected synchronized void calculateNext(){
+	public boolean checkFloors(int floorNbr, boolean up) {
+		int temp = 0;
+		if(up) {
+			for(int i = floorNbr; i < 7; i++) {
+				temp += waitEntry[i];
+				temp += waitExit[i];
+			}
+		}else {
+			for(int i = 0; i < floorNbr; i++) {
+				temp += waitEntry[i];
+				temp += waitExit[i];
+			}
+		}
+		return temp != 0; 
+	}
+	
+	public synchronized void updateNextFloor(){
 		if(next > here){
 			here = next;
 			if(next == 6){
 				next--;
 				direction = false;
 			}else{
-				next++;
-				direction = true;
+				if(checkFloors(here, true)) {
+					next++;
+					direction = true;
+				}else {
+					next--;
+					direction = false;
+				}
 			}
 		}else{
 			here = next;
@@ -118,8 +139,13 @@ public class Monitor {
 				next++;
 				direction = true;
 			}else{
-				next--;
-				direction = false;
+				if(checkFloors(here, false)) {
+					next--;
+					direction = false;
+				}else {
+					next++;
+					direction = true;
+				}
 			}
 		}
 		notifyAll();
