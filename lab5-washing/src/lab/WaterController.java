@@ -23,7 +23,6 @@ public class WaterController extends MessagingThread<WashingMessage> {
 				// if m is null, it means a minute passed and no message was received
 				if (m != null) {
 					System.out.println("got " + m);
-					System.out.println(m.getCommand());
 					switch (m.getCommand()) {
 					case WashingMessage.WATER_FILL:
 						t = new Thread(new Runnable() {
@@ -32,6 +31,12 @@ public class WaterController extends MessagingThread<WashingMessage> {
 								io.fill(true);
 								while(true) {
 									if(io.getWaterLevel() >= m.getValue()) {
+										io.fill(false);
+										
+									}
+									try {
+										Thread.sleep(5000 / Wash.SPEEDUP);
+									} catch (InterruptedException e) {
 										io.fill(false);
 										break;
 									}
@@ -47,10 +52,13 @@ public class WaterController extends MessagingThread<WashingMessage> {
 						}
 						io.fill(false);
 						io.drain(true);
-						System.out.println("kommer hit");
 
 						break;
 					case WashingMessage.WATER_IDLE:
+						if(t != null && t.isAlive()) {
+							t.interrupt();
+						}
+						io.drain(false);
 						break;
 					}
 				}

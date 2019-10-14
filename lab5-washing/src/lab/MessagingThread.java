@@ -22,6 +22,6 @@ public class MessagingThread<M> extends Thread {
         milliseconds if none available. Returns null if no message is obtained
         within 'timeout' milliseconds. */
     protected M receiveWithTimeout(long timeout) throws InterruptedException {
-        return queue.poll(timeout, TimeUnit.MILLISECONDS );
+        return queue.poll(timeout, TimeUnit.MILLISECONDS);
     }
 }

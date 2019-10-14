@@ -4,41 +4,48 @@ import wash.WashingIO;
 
 public class TemperatureController extends MessagingThread<WashingMessage> {
 
-    // TODO: add attributes
+	// TODO: add attributes
 	private WashingIO io;
-	private int dt = 10000;
-    public TemperatureController(WashingIO io) {
-    	this.io = io;
-    }
+	private int dt = 10000 / Wash.SPEEDUP;
 
-    @Override
-    public void run() {
-    	Thread t = null;
+	public TemperatureController(WashingIO io) {
+		this.io = io;
+	}
+
+	@Override
+	public void run() {
+		Thread t = null;
 		try {
 
 			while (true) {
 				// wait for up to a (simulated) minute for a WashingMessage
 				WashingMessage m = receiveWithTimeout(60000 / Wash.SPEEDUP);
-
+				double mu = 2000*10/(io.getWaterLevel()*4184);
 				// if m is null, it means a minute passed and no message was received
 				if (m != null) {
 					System.out.println("got " + m);
-					System.out.println(m.getCommand());
 					switch (m.getCommand()) {
 					case WashingMessage.TEMP_SET:
 						t = new Thread(new Runnable() {
 							@Override
 							public void run() {
-								io.heat(true);
-								while(true) {
-									if(io.getTemperature() >= m.getValue()) {
+								if (io.getWaterLevel() != 0)
+									io.heat(true);
+								double valueTemperature = m.getValue();
+
+								while (true) {
+									if (io.getTemperature() >= valueTemperature - 2 + 0.2 + 10 * 0.000238*(valueTemperature-20)) {
 										io.heat(false);
-										break;
+									} else if (io.getTemperature() <= valueTemperature-mu-0.2 && io.getWaterLevel() != 0) {
+										io.heat(true);
 									}
+										
 									try {
 										Thread.sleep(dt);
 									} catch (InterruptedException e) {
+
 										io.heat(false);
+										break;
 									}
 								}
 							}
@@ -48,10 +55,10 @@ public class TemperatureController extends MessagingThread<WashingMessage> {
 						break;
 
 					case WashingMessage.TEMP_IDLE:
-						if(t != null && t.isAlive()) {
+						if (t != null) {
 							t.interrupt();
-							io.heat(false);
 						}
+						io.heat(false);
 						break;
 					}
 				}

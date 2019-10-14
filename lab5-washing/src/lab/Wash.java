@@ -20,30 +20,53 @@ public class Wash {
         temp.start();
         water.start();
         spin.start();
-
+        
+        Thread t = null;
         while (true) {
+        	System.out.println("Awaiting button");
             int n = io.awaitButton();
-            System.out.println("user selected program " + n);
+            System.out.println("User selected program " + n);
+            
             switch(n) {
+            	case 0:
+            		if(t != null && t.isAlive()) {
+            			t.interrupt();
+            		}
+            		break;
            		case 1:
-           			System.out.println("doing program 1");
-	            	WashingProgram1 wp1 = new WashingProgram1(io, temp, water, spin);
-	            	wp1.run();
+           			t = new Thread(new Runnable() {
+						@Override
+						public void run() {							
+							WashingProgram1 wp1 = new WashingProgram1(io, temp, water, spin);
+							wp1.run();
+						}
+           			});
+           			t.start();
            			break;
 	            case 2:
-	            	System.out.println("doing program 1");
+	            	t = new Thread(new Runnable() {
+						@Override
+						public void run() {							
+							WashingProgram2 wp2 = new WashingProgram2(io, temp, water, spin);
+							wp2.run();
+						}
+           			});
+           			t.start();
 	            	break;
 	            case 3:
-	            	WashingProgram3 wp3 = new WashingProgram3(io, temp, water, spin);
-	            	wp3.run();
+	            	t = new Thread(new Runnable() {
+						@Override
+						public void run() {							
+							WashingProgram3 wp3 = new WashingProgram3(io, temp, water, spin);
+							wp3.run();
+						}
+           			});
+           			t.start();
 	            	break;
 	            default:
 	            	break;
             	
             }
-            // TODO:
-            // if the user presses buttons 1-3, start a washing program
-            // if the user presses button 0, and a program has been started, stop it
         }
     }
 };

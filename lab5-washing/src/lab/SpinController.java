@@ -1,7 +1,5 @@
 package lab;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import wash.WashingIO;
 
@@ -27,7 +25,6 @@ public class SpinController extends MessagingThread<WashingMessage> {
 				// if m is null, it means a minute passed and no message was received
 				if (m != null) {
 					System.out.println("got " + m);
-					System.out.println(m.getCommand());
 					switch (m.getCommand()) {
 					case WashingMessage.SPIN_SLOW:
 						if(t != null && t.isAlive())
@@ -61,8 +58,8 @@ public class SpinController extends MessagingThread<WashingMessage> {
 					case WashingMessage.SPIN_OFF:
 						if(t != null && t.isAlive()) {
 							t.interrupt();
-							io.setSpinMode(WashingIO.SPIN_IDLE);
 						}
+						io.setSpinMode(WashingIO.SPIN_IDLE);
 
 						break;
 					case WashingMessage.SPIN_FAST:
@@ -73,7 +70,6 @@ public class SpinController extends MessagingThread<WashingMessage> {
 							public void run() {
 								io.setSpinMode(WashingIO.SPIN_FAST);
 							}
-
 						});
 						t.start();
 					}

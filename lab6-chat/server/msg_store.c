@@ -8,6 +8,10 @@
 #include "list.h"
 #include "msg_store.h"
 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lock2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
 struct msg_store {
   // A list of topics. Each element points to another list,
   // holding the messages in that topic.
@@ -65,6 +69,7 @@ any_message_available(struct msg_store *store,
 struct msg_store *
 msg_store_create()
 {
+
   struct msg_store *store = malloc(sizeof(struct msg_store));
 
   store->topics = list_create();
@@ -79,6 +84,7 @@ msg_store_add_topic(struct msg_store *store,
                     char *username,
                     char *text)
 {
+  pthread_mutex_lock(&lock);
   struct message *m = malloc(sizeof(struct message));
   m->username = strdup(username);
   m->text = strdup(text);
@@ -87,7 +93,8 @@ msg_store_add_topic(struct msg_store *store,
   list_add(topic, m);
   list_add(store->topics, topic);
   int topic_id = list_size(store->topics) - 1;
-
+  pthread_cond_broadcast(&cond);
+  pthread_mutex_unlock(&lock);
   return topic_id;
 }
 
@@ -99,6 +106,7 @@ msg_store_add_message(struct msg_store *store,
                       char *username,
                       char *text)
 {
+  pthread_mutex_lock(&lock);
   struct message *m = malloc(sizeof(struct message));
   m->username = strdup(username);
   m->text = strdup(text);
@@ -108,6 +116,8 @@ msg_store_add_message(struct msg_store *store,
   }
   struct list *topic = list_get(store->topics, client->current_topic_id);
   list_add(topic, m);
+  pthread_cond_broadcast(&cond);
+  pthread_mutex_unlock(&lock);
 }
 
 // ----------------------------------------------------------------------------
@@ -120,6 +130,7 @@ msg_store_poll_topic(struct msg_store *store,
                      char **username,
                      char **text)
 {
+  
   bool available = any_topic_available(store, client);
   if (available) {
     client->last_topic_published++;
@@ -132,6 +143,7 @@ msg_store_poll_topic(struct msg_store *store,
     *username = m->username;
     *text = m->text;
   }
+  
   return available;
 }
 
@@ -145,6 +157,7 @@ msg_store_poll_message(struct msg_store *store,
                        char **username,
                        char **text)
 {
+ pthread_mutex_lock(&lock);
   bool available = any_message_available(store, client)
                    && (client->current_topic_id >= 0)
                    && (client->current_topic_id < list_size(store->topics));
@@ -161,7 +174,7 @@ msg_store_poll_message(struct msg_store *store,
       *text = m->text;
     }
   }
-
+ pthread_mutex_unlock(&lock);
   return available;
 }
 
@@ -171,8 +184,11 @@ void
 msg_store_init_client(struct msg_store *store,
                       struct client_state *client)
 {
+    
   client->current_topic_id = TOPIC_STATE_NO_TOPIC;
   client->last_topic_published = -1;     // force update
+    
+
 }
 
 // ----------------------------------------------------------------------------
@@ -182,8 +198,11 @@ msg_store_select_topic(struct msg_store *store,
                        struct client_state *client,
                        int topic_id)
 {
+  pthread_mutex_lock(&lock);
   client->current_topic_id = topic_id;
   client->last_message_published = -1;   // force update
+  pthread_cond_broadcast(&cond);
+  pthread_mutex_unlock(&lock);
 }
 
 // ----------------------------------------------------------------------------
@@ -198,13 +217,15 @@ msg_store_await_message_or_topic(struct msg_store *store,
   //
   // -- Jim Hacker
   //
-
+  pthread_mutex_lock(&lock);
   while (! any_topic_available(store, client)
       && ! any_message_available(store, client))
   {
+      pthread_cond_wait(&cond,&lock);
+      
   }
-
+  
   int reading_state = client->current_topic_id;
-
+  pthread_mutex_unlock(&lock);
   return reading_state;
 }

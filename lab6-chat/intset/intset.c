@@ -6,6 +6,8 @@
 
 #include "intset.h"
 
+pthread_mutex_t lock;
+
 /*
  * Set implemented using closed hashing.
  */
@@ -31,7 +33,7 @@ intset_create()
     perror("malloc");
     exit(1);
   }
-
+  pthread_mutex_init(&lock,NULL);
   s->size = 0;
   s->allocated = 10;
   s->data = malloc(sizeof(int) * s->allocated);
@@ -79,6 +81,7 @@ bool
 intset_add(struct intset *s, int a)
 {
   // rehash if more than 70% is used
+  pthread_mutex_lock(&lock);
   if (s->size >= s->allocated * 7 / 10) {
     int old_allocated = s->allocated;
     int *old_data     = s->data;
@@ -109,12 +112,13 @@ intset_add(struct intset *s, int a)
 
   int idx = find(s, a);
   if (s->data[idx] == a) {
+       pthread_mutex_unlock(&lock);
     return false;
   }
 
   s->data[idx] = a;
   s->size++;
-
+  pthread_mutex_unlock(&lock);
   return true;
 }
 
@@ -135,7 +139,8 @@ intset_contains(struct intset *s, int a)
 int
 intset_size(struct intset *s)
 {
+  pthread_mutex_lock(&lock);
   int sz = s->size;
-
+  pthread_mutex_unlock(&lock);
   return sz;
 }
